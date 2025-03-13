@@ -1,0 +1,32 @@
+name: Deploy React App
+
+on:
+  push:
+    branches:
+      - v6  # Runs the workflow when pushing to v6 branch
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: SSH into EC2 & Deploy Frontend
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ec2-13-61-104-183.eu-north-1.compute.amazonaws.com
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ec2-user/React-SearchTool
+            git checkout v6
+            git pull origin v6
+            npm install
+            npm run build
+            sudo rm -rf /usr/share/nginx/html/*
+            sudo cp -r /home/ec2-user/React-SearchTool/dist/* /usr/share/nginx/html/
+            sudo chown -R nginx:nginx /usr/share/nginx/html
+            sudo chmod -R 755 /usr/share/nginx/html
+            sudo systemctl restart nginx
